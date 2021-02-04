@@ -8,7 +8,7 @@ public class SortTest {
     int[] A2 = {1, 3, 5, 7, 9};
     verifyParallelSort(A2);
     
-    int[] A3 = {13, 59, 24, 18, 33, 20, 11, 11, 13, 50, 10999, 97};
+    int[] A3 = {13, 59, 24, 18, 33, 20, 11, 11, 13, 50, 10999, 97, 83, 57, 90, 21, 17, 20, 41};
     verifyParallelSort(A3);
   }
 
