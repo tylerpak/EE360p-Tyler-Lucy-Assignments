@@ -12,7 +12,14 @@ public class PSort {
     ForkJoinPool forkJoinPool = new ForkJoinPool();
     MyRecursiveAction thread = new MyRecursiveAction(A, begin, end);
     forkJoinPool.execute(thread);
-    forkJoinPool.shutdown();
+    while(!thread.isDone()) {
+      forkJoinPool.shutdown();
+      try {
+        forkJoinPool.awaitTermination(5, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
   }
 
   public static class MyRecursiveAction extends RecursiveAction {
@@ -25,8 +32,8 @@ public class PSort {
     public MyRecursiveAction(int[] A, int begin, int end) {
         this.A = A;
         this.begin = begin;
-        this.end = end;
-        this.workload = A.length;
+        this.end = end - 1;
+        this.workload = end - begin + 1;
     }
 
     public static void sort(int[] A, int begin, int end) {
@@ -41,7 +48,7 @@ public class PSort {
     }
 
     public static void insertSort(int[] A, int begin, int end) {
-      for (int i = begin+1; i < end+1; ++i) {
+      for (int i = begin+1; i < end+2; ++i) {
         int val = A[i];
         int j = i - 1;
         while (j >= 0 && A[j] > val) {
@@ -72,11 +79,24 @@ public class PSort {
 
     @Override
     protected void compute() {
-      if(A.length <= 16) {
-        sort(A, begin, end);
+      if(workload <= 16) {
+        insertSort(A, begin, end);
       }
       else if (begin < end) {
-        int pi = part(A, begin, end);
+        int pi = A[end];
+        int index = (begin - 1);
+        for (int i = begin; i < end; i++) {
+          if (A[i] < pi) {
+            index++;
+            int temp = A[index];
+            A[index] = A[i];
+            A[i] = temp;
+          }
+        }
+        int temp = A[index + 1];
+        A[index + 1] = A[end];
+        A[end] = temp;
+        pi = index + 1;
         MyRecursiveAction task1 = new MyRecursiveAction(A, begin, pi - 1);
         task1.fork();
         MyRecursiveAction task2 = new MyRecursiveAction(A, pi + 1, end);
