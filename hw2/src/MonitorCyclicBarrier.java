@@ -1,7 +1,4 @@
-/*
- * EID's of group members
- * 
- */
+//UT-EID= tjp2365, lwz83
 
 public class MonitorCyclicBarrier {
 	

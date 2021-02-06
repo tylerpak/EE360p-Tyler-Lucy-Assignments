@@ -1,6 +1,4 @@
-
-// EID 1
-// EID 2
+//UT-EID= tjp2365, lwz83
 
 public class PriorityQueue {
 
