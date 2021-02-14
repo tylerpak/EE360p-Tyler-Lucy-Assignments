@@ -7,9 +7,9 @@ public class PriorityQueue {
         int maxSize;
         int currentSize;
         // Shouldn't have this?
-        // Lock unused = new ReentrantLock();
-        // Condition isFull = unused.newCondition();
-        // Condition isEmpty = unused.newCondition();
+        Lock list = new ReentrantLock();
+        Condition isFull = list.newCondition();
+        Condition isEmpty = list.newCondition();
 
         // Creates a Priority queue with maximum allowed size as capacity
         public PriorityQueue(int maxSize) {
@@ -25,8 +25,8 @@ public class PriorityQueue {
         public int add(String name, int priority) {
                 while (currentSize >= maxSize) {
                         try {
-                                // isFull.await();
-                                wait();
+                                isFull.await();
+                                // wait();
                         } catch (Exception e) {
                                 e.printStackTrace();
                         }
@@ -34,7 +34,9 @@ public class PriorityQueue {
 
                 // insert into LinkedList
                 Node node = new Node(name, priority);
+                list.lock();
                 Node newNext = head;
+                list.unlock();
                 Node newPrev = null;
                 int index = -1;
                 
@@ -67,8 +69,8 @@ public class PriorityQueue {
                         head = node;
                 }
                 currentSize++;
-                // isEmpty.signalAll();
-                notifyAll();
+                isEmpty.signalAll();
+                // notifyAll();
 
                 return index;
         }
@@ -104,26 +106,34 @@ public class PriorityQueue {
         public String getFirst() {
                 while (currentSize == 0) {
                         try {
-                                // isEmpty.await();
-                                wait();
+                                isEmpty.await();
+                                // wait();
                         } catch (InterruptedException e) {
                                 e.printStackTrace();
                         }
                 }
                 
                 // remove from linked list
+                list.lock();
                 Node node = head;
                 Node newHead = head.next;
                 node.mutex.lock();
-                newHead.mutex.lock();
+                list.unlock();
+
+                if (newHead != null)
+                        newHead.mutex.lock();
+                
                 node.next = null;
                 head = newHead;
-                newHead.mutex.unlock();
+
+                if (newHead != null)
+                        newHead.mutex.unlock();
+                        
                 node.mutex.unlock();
 
                 currentSize--;
-                // isFull.signalAll();
-                notifyAll();
+                isFull.signalAll();
+                // notifyAll();
                 return node.name;
 	}
 
