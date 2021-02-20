@@ -5,11 +5,10 @@ import java.util.concurrent.locks.*;
 public class PriorityQueue {
         Node head;
         int maxSize;
-        int currentSize;
-        // Shouldn't have this?
-        Lock list = new ReentrantLock();
-        Condition isFull = list.newCondition();
-        Condition isEmpty = list.newCondition();
+        volatile int currentSize;
+        Lock lockHead = new ReentrantLock();
+        Condition isFull = lockHead.newCondition();
+        Condition isEmpty = lockHead.newCondition();
 
         // Creates a Priority queue with maximum allowed size as capacity
         public PriorityQueue(int maxSize) {
@@ -23,28 +22,35 @@ public class PriorityQueue {
         // otherwise, returns -1 if the name is already present in the list.
         // This method blocks when the list is full.
         public int add(String name, int priority) {
-                while (currentSize >= maxSize) {
-                        try {
-                                isFull.await();
-                                // wait();
-                        } catch (Exception e) {
-                                e.printStackTrace();
+                try {
+                        lockHead.lock();
+                        while (currentSize >= maxSize) {
+                                try {
+                                        isFull.await();
+                                } catch (Exception e) {
+                                        e.printStackTrace();
+                                }   
                         }
+                } finally {
+                        lockHead.unlock();
                 }
 
                 // insert into LinkedList
                 Node node = new Node(name, priority);
-                list.lock();
+
+                lockHead.lock();
                 Node newNext = head;
-                list.unlock();
+                lockHead.unlock();
                 Node newPrev = null;
-                int index = -1;
+                int index = 0;
                 
                 while (newNext != null) {
-                        index++;
                         newNext.mutex.lock();
 
-                        if (newNext.priority < priority) {
+                        if (newNext.name == name){
+                                return -1;
+                        }
+                        else if (newNext.priority < priority) {
                                 break;
                         }
                         
@@ -53,45 +59,55 @@ public class PriorityQueue {
 
                         newPrev = newNext;
                         newNext = newNext.next;
+                        index++;
                 }
 
                 //both nextNode and prevNode are already locked
                 if (newNext != null && newPrev != null) {
                         node.next = newNext;
-                        newNext.next = node;
+                        newPrev.next = node;
                         newPrev.mutex.unlock();
                         newNext.mutex.unlock();
                 } else if (newNext != null && newPrev == null) {
                         node.next = newNext;
+                        lockHead.lock();
                         head = node;
+                        lockHead.unlock();
                         newNext.mutex.unlock();
+                } else if (newNext == null && newPrev != null){
+                        newPrev.next = node;
+                        newPrev.mutex.unlock();
                 } else {
+                        lockHead.lock();
                         head = node;
+                        lockHead.unlock();
                 }
                 currentSize++;
+                lockHead.lock();
                 isEmpty.signalAll();
-                // notifyAll();
-
+                lockHead.unlock();
                 return index;
         }
 
         // Returns the position of the name in the list;
         // otherwise, returns -1 if the name is not found.
         public int search(String name) {
-                int index = -1;
+                int index = 0;
+                lockHead.lock();
                 Node node = head;
+                lockHead.unlock();
                 boolean found = false;
 
                 while (node != null) {
-                        index++;
                         node.mutex.lock();
-                        if (node.name == name) {
+                        if (name.compareTo(node.name) == 0) {
                                 node.mutex.unlock();
                                 found = true;
                                 break;
                         }
                         node.mutex.unlock();
                         node = node.next;
+                        index++;
                 }
 
                 if (!found){
@@ -104,21 +120,25 @@ public class PriorityQueue {
         // Retrieves and removes the name with the highest priority in the list,
         // or blocks the thread if the list is empty.
         public String getFirst() {
-                while (currentSize == 0) {
-                        try {
-                                isEmpty.await();
-                                // wait();
-                        } catch (InterruptedException e) {
-                                e.printStackTrace();
+                try {
+                        lockHead.lock();
+                        while (currentSize == 0) {
+                                try {
+                                        isEmpty.await();
+                                } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                }
                         }
+                } finally {
+                        lockHead.unlock();
                 }
-                
+
                 // remove from linked list
-                list.lock();
+                lockHead.lock();
                 Node node = head;
                 Node newHead = head.next;
+                lockHead.unlock();
                 node.mutex.lock();
-                list.unlock();
 
                 if (newHead != null)
                         newHead.mutex.lock();
@@ -132,8 +152,9 @@ public class PriorityQueue {
                 node.mutex.unlock();
 
                 currentSize--;
-                isFull.signalAll();
-                // notifyAll();
+                lockHead.lock();
+                isFull.signalAll(); //wakes up all threads that were waiting for a node to be removed
+                lockHead.unlock();
                 return node.name;
 	}
 
@@ -143,6 +164,7 @@ public class PriorityQueue {
 
                 while (node != null){
                         System.out.print(node + ", ");
+                        node = node.next;
                 }
         }
 
@@ -154,12 +176,22 @@ public class PriorityQueue {
                 int priority;
                 Lock mutex;
                 Node next;
+                Condition inUse;
+
+                public Node(){
+                        name = "head";
+                        priority = 10; //creates a head node
+                        mutex = new ReentrantLock();
+                        next = null;
+                        inUse = mutex.newCondition();
+                }
 
                 public Node(String name, int priority){
                         this.name = name;
                         this.priority = priority;
                         mutex = new ReentrantLock();
                         next = null;
+                        inUse = mutex.newCondition();
                 }
 
                 // For testing purposes
