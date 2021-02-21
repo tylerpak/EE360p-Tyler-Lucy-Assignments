@@ -47,7 +47,7 @@ public class PriorityQueue {
                 while (newNext != null) {
                         newNext.mutex.lock();
 
-                        if (newNext.name == name){
+                        if (name.compareTo(newNext.name) == 0){
                                 return -1;
                         }
                         else if (newNext.priority < priority) {

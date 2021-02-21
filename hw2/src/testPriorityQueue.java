@@ -26,16 +26,20 @@ public class testPriorityQueue implements Runnable {
 
     @Override
     public void run() {
-        // TODO Auto-generated method stub
-        // System.out.println("removed: " + priorityQueue.getFirst());
+        // System.out.println("removed: " + priorityQueue.getFirst()); //will block if empty
         for (int i = 0; i < 6; i++){
-            priorityQueue.add("Item" + i, i);
+            System.out.println("added at: " + priorityQueue.add("Item" + i, i));
+        }
+
+        for (int i = 0; i < 3; i++){
+            System.out.println("added at: " + priorityQueue.add("Item" + (i + 6), i));
         }
 
         priorityQueue.printList();
         System.out.println("search thread 1: " + priorityQueue.search("Item5"));
 
-        System.out.println("removed: " + priorityQueue.getFirst());
-        System.out.println("removed: " + priorityQueue.getFirst());
+        for (int i = 0; i < 6; i++){
+            System.out.println("removed: " + priorityQueue.getFirst());
+        }       
     }
 }
