@@ -1,13 +1,17 @@
 import java.io.*;
 import java.net.*;
-import java.util.Scanner;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class BookServer{
   public static Inventory inventory = new Inventory();
-  public static void main (String[] args) {
-    int tcpPort;
-    int udpPort;
+  public static HashMap<Integer, String[]> requestLog = new HashMap<>();
+  static int requestId = 1;
+  static int tcpPort;
+  static int udpPort;
+  static ExecutorService threadPool = Executors.newCachedThreadPool();
 
+  public static void main (String[] args) {
     if (args.length != 1) {
       System.out.println("ERROR: Provide 1 argument: input file containing initial inventory");
       System.exit(-1);
@@ -45,28 +49,29 @@ public class BookServer{
       DatagramSocket udpServer = new DatagramSocket(udpPort);
       Socket tcpClient;
       
-      byte[] inBuf = new byte[1024];
-      byte[] outBuf = new byte[1024];
-      DatagramPacket rPacket;
-      DatagramPacket sPacket;
-      
       while ((tcpClient = tcpServer.accept()) != null || udpServer.isConnected()){
-        if (tcpClient != null){
-          Thread t = new ServerThread(true, inventory, tcpClient, null, null); //for TCP connections
+        if (tcpClient != null){ // handling TCP requests
+          Thread t = new ServerThread(true, inventory, requestLog, requestId, tcpClient, null); //for TCP connections
           t.start();
+          threadPool.submit(t);
         }
-        else { 
-          rPacket = new DatagramPacket(inBuf, 1024);
-          sPacket = new DatagramPacket(outBuf, 1024, rPacket.getAddress(), udpPort);
-          udpServer.receive(rPacket);
-          udpServer.send(sPacket);
-          Thread t = new ServerThread(false, inventory, null, rPacket, sPacket);
+        else { // handling UDP requests
+          Thread t = new ServerThread(false, inventory, requestLog, requestId, null, udpServer); //for UDP connections
           t.start();
+          threadPool.submit(t);
         }
       }
 
+      threadPool.shutdown();
+      threadPool.awaitTermination(3, TimeUnit.SECONDS);
       tcpServer.close();
       udpServer.close();
-    } catch (IOException e) {}
+    } catch (Exception e) {}
+  }
+
+  public static void switchConnection(boolean toTCP, Socket client) throws IOException{
+    if (toTCP){
+      client.close();
+    }
   }
 }
