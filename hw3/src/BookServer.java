@@ -50,32 +50,36 @@ public class BookServer{
     try {
       tcpServer = new ServerSocket(tcpPort);
       udpServer = new DatagramSocket(udpPort);
+      tcpServer.setSoTimeout(1000);
+      udpServer.setSoTimeout(1000);
       Socket tcpClient;
       DatagramPacket receiveConnection;
-      
+      boolean checkTCP = true;
       while (true){
-        if ((tcpClient = tcpServer.accept()) != null){ // handling TCP requests
-          Thread t = new ServerThread(inventory, requestLog, requestId, tcpServer, tcpClient); //for TCP connections
-          t.start();
-          threadPool.submit(t);
-        }
-        else { // handling UDP requests
-          receiveConnection = new DatagramPacket(new byte[1024], 1024);
-          udpServer.receive(receiveConnection);
-          Thread t = new ServerThread(inventory, requestLog, requestId, udpServer, receiveConnection); //for UDP connections
-          t.start();
-          threadPool.submit(t);
-        }
-      }      
+        try {
+          while (true){
+            if (checkTCP && (tcpClient = tcpServer.accept()) != null){ // handling TCP requests
+              Thread t = new ServerThread(inventory, requestLog, requestId, tcpServer, tcpClient); //for TCP connections
+              t.start();
+              threadPool.submit(t);
+            }
+            else { // handling UDP requests
+              receiveConnection = new DatagramPacket(new byte[1024], 1024);
+              udpServer.receive(receiveConnection);
+              Thread t = new ServerThread(inventory, requestLog, requestId, udpServer, receiveConnection); //for UDP connections
+              t.start();
+              threadPool.submit(t);
+            }
+          }   
+        } catch (SocketTimeoutException e) { //this prevents blocking on accept() or receive (will timeout after 1 sec) 
+          checkTCP = !checkTCP;
+        } 
+      }
     } catch (Exception e) {
       threadPool.shutdown();
       try {
         threadPool.awaitTermination(3, TimeUnit.SECONDS);
-        // tcpServer.close();
-        // udpServer.close();
-      } catch (InterruptedException e1) {
-        e1.printStackTrace();
-      }
+      } catch (InterruptedException e1) {}
     }
   }
 }

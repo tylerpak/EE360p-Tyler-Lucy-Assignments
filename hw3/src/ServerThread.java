@@ -38,10 +38,11 @@ public class ServerThread extends Thread{
     @Override
     public void run() {
       try {
-        Scanner sc;
-        PrintWriter pout;
+        Scanner sc = new Scanner(System.in);
+        PrintWriter pout = new PrintWriter(System.out);
 
         if (tcpMode){ //sets input/output for TCP connection
+          sc.close();
           sc = new Scanner(client.getInputStream());
           pout = new PrintWriter(client.getOutputStream());
         }
@@ -49,16 +50,22 @@ public class ServerThread extends Thread{
         while (true){
           if (!tcpMode){ //blocks for next udp message and reads command
             udpServer.receive(inBuf);
-            sc = new Scanner(new String(inBuf.getData()));
+            sc.close();
+            sc = new Scanner(new String(inBuf.getData(), inBuf.getOffset(), inBuf.getLength()));
+          }
+          else {
+            while (!sc.hasNextLine()){ //busy wait until next command is given
+              sleep(3000);
+            }
           }
 
           String message = "";
           String command = sc.nextLine();
-          // System.out.println("received:" + command);
+          System.out.println("received:" + command);
           Scanner st = new Scanner(command);          
           String tag = st.next();
 
-          if (tag.equals("setmode")){ //let client side handle setmode?
+          if (tag.equals("setmode")){ //let client side handle setmode
             tcpMode = st.next().equals("T");
             message = String.format("The communication mode is set to %s\n", tcpMode ? "T" : "U");
           } else if (tag.equals("borrow")) {
@@ -71,7 +78,7 @@ public class ServerThread extends Thread{
             } else if (result == 0){
               message = "Request Failed - Book not available";
             } else {
-              message = String.format("Your request has been approved, %d %s %s", requestId, borrower, title);
+              message = String.format("Your request has been approved, %d %s %s", requestId.get(), borrower, title);
               String[] requestDetails = {title, borrower};
               requestLog.put(requestId.get(), requestDetails);
               requestId.incrementAndGet();
@@ -115,6 +122,7 @@ public class ServerThread extends Thread{
           }
 
           if (message.length() > 0){
+            System.out.println(message);
             if (tcpMode){
               pout.println(message);
               pout.flush();
@@ -126,9 +134,9 @@ public class ServerThread extends Thread{
           }
           st.close();
         } 
-      } catch (IOException e) {
-        System.err.println(e);
+      } catch (Exception e) {
       }
+      // System.out.println("exiting thread");
     }
 
     /**

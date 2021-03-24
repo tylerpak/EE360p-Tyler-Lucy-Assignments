@@ -76,13 +76,13 @@ public class Inventory {
      * @return list of titles that borrower currently has
      */
     public synchronized List<String> borrowerList(String borrower){
-        List<String> borrowerList = new LinkedList<>();
+        List<String> list = new LinkedList<>();
         for (int i = 0; i < titleList.size(); i++){
             if (borrowerList.get(i).contains(borrower)){
-                borrowerList.add(titleList.get(i));
+                list.add(titleList.get(i));
             }
         }
-        return borrowerList;
+        return list;
     }
 
     /**
