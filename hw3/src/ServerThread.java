@@ -1,60 +1,66 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServerThread extends Thread{
     byte buf1[] = new byte[1024];
     byte buf2[] = new byte[1024];
     Socket client;
-    static DatagramSocket server;
+    static DatagramSocket udpServer;
+    static ServerSocket tcpServer;
     DatagramPacket inBuf;
     DatagramPacket outBuf;
     static Inventory inventory;
     boolean tcpMode;
-    static int requestId;
+    static AtomicInteger requestId = new AtomicInteger();
     static HashMap<Integer, String[]> requestLog;
     
-    public ServerThread(boolean tcpConnection, Inventory bookInventory, HashMap<Integer, String[]> reqLog, int requestNum, Socket clientSocket, DatagramSocket serverSocket){
-      if (tcpConnection){
-        client = clientSocket;
-      }
-      else {
-        server = serverSocket;
-        inBuf = new DatagramPacket(buf1, 1024);
-        outBuf = new DatagramPacket(buf2, 1024);
-      }
-      tcpMode = tcpConnection;
+    public ServerThread(Inventory bookInventory, HashMap<Integer, String[]> reqLog, int requestNum, ServerSocket serverSocket, Socket clientSocket){
+      client = clientSocket;
+      tcpServer = serverSocket;
+      tcpMode = true;
       inventory = bookInventory;
-      requestId = requestNum;
+      requestId.set(requestNum);
+      requestLog = reqLog;
+    }
+
+    public ServerThread(Inventory bookInventory, HashMap<Integer, String[]> reqLog, int requestNum, DatagramSocket serverSocket, DatagramPacket receivePacket){
+      udpServer = serverSocket;
+      inBuf = receivePacket;
+      outBuf = new DatagramPacket(buf2, 1024, inBuf.getAddress(), inBuf.getPort());
+      tcpMode = false;
+      inventory = bookInventory;
+      requestId.set(requestNum);
       requestLog = reqLog;
     }
 
     @Override
-    public void run() { //should work for tcp, trying to figure out how to translate to udp
+    public void run() {
       try {
         Scanner sc;
         PrintWriter pout;
 
+        if (tcpMode){ //sets input/output for TCP connection
+          sc = new Scanner(client.getInputStream());
+          pout = new PrintWriter(client.getOutputStream());
+        }
+
         while (true){
-          if (tcpMode){
-            sc = new Scanner(client.getInputStream());
-            pout = new PrintWriter(client.getOutputStream());
-          }
-          else {
-            server.receive(inBuf);
-            sc = new Scanner(inBuf.getData().toString());
+          if (!tcpMode){ //blocks for next udp message and reads command
+            udpServer.receive(inBuf);
+            sc = new Scanner(new String(inBuf.getData()));
           }
 
           String message = "";
           String command = sc.nextLine();
-          System.out.println("received:" + command);
+          // System.out.println("received:" + command);
           Scanner st = new Scanner(command);          
           String tag = st.next();
-          if (tag.equals("setmode")){
+
+          if (tag.equals("setmode")){ //let client side handle setmode?
             tcpMode = st.next().equals("T");
             message = String.format("The communication mode is set to %s\n", tcpMode ? "T" : "U");
-            //not sure how to change connections
-            //need to close then reconnect?
           } else if (tag.equals("borrow")) {
             String borrower = st.next();
             String title = st.next();
@@ -67,8 +73,8 @@ public class ServerThread extends Thread{
             } else {
               message = String.format("Your request has been approved, %d %s %s", requestId, borrower, title);
               String[] requestDetails = {title, borrower};
-              requestLog.put(requestId, requestDetails);
-              requestId++;
+              requestLog.put(requestId.get(), requestDetails);
+              requestId.incrementAndGet();
             }
           } else if (tag.equals("return")) {
             int returnRequest = st.nextInt();
@@ -98,18 +104,12 @@ public class ServerThread extends Thread{
           } else if (tag.equals("inventory")) {
             message = inventory.printInventory();
           } else if (tag.equals("exit")){
-            String exitMessage = inventory.printInventory();
-            client.close();
-            PrintWriter fileOut = new PrintWriter(new File("inventory.txt"));
-            fileOut.println(exitMessage);
-            fileOut.flush();
-            fileOut.close();
+            writeInventory();
             st.close();
-
-            if (tcpMode){
+            if (tcpMode) {
               pout.close();
+              client.close();
             }
-
             sc.close();
             break;
           }
@@ -121,7 +121,7 @@ public class ServerThread extends Thread{
             }
             else {
               outBuf.setData(message.getBytes());
-              server.send(outBuf);
+              udpServer.send(outBuf);
             }
           }
           st.close();
@@ -154,5 +154,17 @@ public class ServerThread extends Thread{
         }
       }
       return borrowerLog;
+    }
+
+    /**
+     * Creates and writes the current inventory in inventory.txt
+     * @throws IOException inventory.txt is not found and cannot be created
+     */
+    public synchronized void writeInventory() throws IOException{
+      String exitMessage = inventory.printInventory();
+      PrintWriter fileOut = new PrintWriter(new File("inventory.txt"));
+      fileOut.println(exitMessage);
+      fileOut.flush();
+      fileOut.close();
     }
   }

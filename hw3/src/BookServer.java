@@ -4,12 +4,6 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class BookServer{
-  public static Inventory inventory = new Inventory();
-  public static HashMap<Integer, String[]> requestLog = new HashMap<>();
-  static int requestId = 1;
-  static int tcpPort;
-  static int udpPort;
-  static ExecutorService threadPool = Executors.newCachedThreadPool();
 
   public static void main (String[] args) {
     if (args.length != 1) {
@@ -17,8 +11,14 @@ public class BookServer{
       System.exit(-1);
     }
     String fileName = args[0];
-    tcpPort = 7000;
-    udpPort = 8000;
+    int tcpPort = 7000;
+    int udpPort = 8000;
+
+    // server variables (all threads share the same inventory, requestLog, requestId)
+    Inventory inventory = new Inventory();
+    HashMap<Integer, String[]> requestLog = new HashMap<>();
+    int requestId = 1;
+    ExecutorService threadPool = Executors.newCachedThreadPool();
 
     // parse the inventory file
     try {
@@ -43,35 +43,39 @@ public class BookServer{
       scan.close();
     } catch (FileNotFoundException e) {}
     
-    // handling client connections
+    // handle client connections
+    ServerSocket tcpServer;
+    DatagramSocket udpServer;
+
     try {
-      ServerSocket tcpServer = new ServerSocket(tcpPort);
-      DatagramSocket udpServer = new DatagramSocket(udpPort);
+      tcpServer = new ServerSocket(tcpPort);
+      udpServer = new DatagramSocket(udpPort);
       Socket tcpClient;
+      DatagramPacket receiveConnection;
       
-      while ((tcpClient = tcpServer.accept()) != null || udpServer.isConnected()){
-        if (tcpClient != null){ // handling TCP requests
-          Thread t = new ServerThread(true, inventory, requestLog, requestId, tcpClient, null); //for TCP connections
+      while (true){
+        if ((tcpClient = tcpServer.accept()) != null){ // handling TCP requests
+          Thread t = new ServerThread(inventory, requestLog, requestId, tcpServer, tcpClient); //for TCP connections
           t.start();
           threadPool.submit(t);
         }
         else { // handling UDP requests
-          Thread t = new ServerThread(false, inventory, requestLog, requestId, null, udpServer); //for UDP connections
+          receiveConnection = new DatagramPacket(new byte[1024], 1024);
+          udpServer.receive(receiveConnection);
+          Thread t = new ServerThread(inventory, requestLog, requestId, udpServer, receiveConnection); //for UDP connections
           t.start();
           threadPool.submit(t);
         }
-      }
-
+      }      
+    } catch (Exception e) {
       threadPool.shutdown();
-      threadPool.awaitTermination(3, TimeUnit.SECONDS);
-      tcpServer.close();
-      udpServer.close();
-    } catch (Exception e) {}
-  }
-
-  public static void switchConnection(boolean toTCP, Socket client) throws IOException{
-    if (toTCP){
-      client.close();
+      try {
+        threadPool.awaitTermination(3, TimeUnit.SECONDS);
+        // tcpServer.close();
+        // udpServer.close();
+      } catch (InterruptedException e1) {
+        e1.printStackTrace();
+      }
     }
   }
 }
