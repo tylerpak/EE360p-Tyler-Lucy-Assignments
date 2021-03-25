@@ -31,7 +31,6 @@ public class ServerThread extends Thread{
     public ServerThread(Inventory bookInventory, HashMap<Integer, String[]> reqLog, AtomicInteger requestNum, DatagramSocket serverSocket, DatagramPacket receivePacket){
       udpServer = serverSocket;
       inBuf = receivePacket;
-      outBuf = new DatagramPacket(buf2, 1024, inBuf.getAddress(), inBuf.getPort());
       tcpMode = false;
       inventory = bookInventory;
       requestId = requestNum;
@@ -53,6 +52,7 @@ public class ServerThread extends Thread{
         while (true){
           if (!tcpMode){ //reading UDP message
             sc.close();
+            udpServer.receive(inBuf);
             sc = new Scanner(new String(inBuf.getData(), inBuf.getOffset(), inBuf.getLength()));
           }
           else {
@@ -63,8 +63,8 @@ public class ServerThread extends Thread{
 
           String message = "";
           String command = sc.nextLine();
-          // System.out.println("received:" + command);
-          Scanner st = new Scanner(command);          
+          System.out.println("received:" + command);
+          Scanner st = new Scanner(command);
           String tag = st.next();
 
           if (tag.equals("setmode")){ //let client side handle setmode
@@ -128,22 +128,19 @@ public class ServerThread extends Thread{
           }
 
           message = message.trim();
-          System.out.println("message:" + message);
+          // System.out.println("message:" + message);
           if (message.length() > 0){
             if (tcpMode){
               pout.println(message);
               pout.flush();
             }
             else {
-              outBuf.setData(message.getBytes());
+              byte packet[] = message.getBytes();
+              outBuf = new DatagramPacket(packet, packet.length, inBuf.getAddress(), inBuf.getPort());
               udpServer.send(outBuf);
             }
           }
           st.close();
-
-          if (!tcpMode){
-            udpServer.receive(inBuf);
-          }
         } 
       } catch (Exception e) {}
     }
