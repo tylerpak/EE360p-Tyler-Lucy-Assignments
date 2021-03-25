@@ -63,7 +63,7 @@ public class ServerThread extends Thread{
 
           String message = "";
           String command = sc.nextLine();
-          // System.out.println("received:" + command);
+          System.out.println("received:" + command);
           Scanner st = new Scanner(command);          
           String tag = st.next();
 

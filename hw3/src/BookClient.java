@@ -31,6 +31,7 @@ public class BookClient {
       e.printStackTrace();
     }
     boolean tcp = false; //True for TCP, False for UDP
+    boolean setmode = false;
     byte[] buf;
 
     if (args.length != 2) {
@@ -55,6 +56,7 @@ public class BookClient {
 
           if (tokens[0].equals("setmode")) {
             String message = tokens[0] + " " + tokens[1];
+            setmode = true;
             if(tokens[1].equals("U")) {
               tcp = false;
               buf = message.getBytes();
@@ -84,6 +86,18 @@ public class BookClient {
               System.out.println(response);
             }
             else {
+              if(setmode == false) {
+                String setDefault = "setmode U";
+                buf = setDefault.getBytes();
+                DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
+                udpSocket.send(packet);
+                buf = new byte[1024];
+                packet = new DatagramPacket(buf, buf.length);
+                udpSocket.receive(packet);
+                String response = new String(packet.getData(), 0, packet.getLength());
+                System.out.println(response);
+                setmode = true;
+              }
               buf = message.getBytes();
               DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
               udpSocket.send(packet);
@@ -102,6 +116,18 @@ public class BookClient {
               System.out.println(response);
             }
             else {
+              if(setmode == false) {
+                String setDefault = "setmode U";
+                buf = setDefault.getBytes();
+                DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
+                udpSocket.send(packet);
+                buf = new byte[1024];
+                packet = new DatagramPacket(buf, buf.length);
+                udpSocket.receive(packet);
+                String response = new String(packet.getData(), 0, packet.getLength());
+                System.out.println(response);
+                setmode = true;
+              }
               buf = message.getBytes();
               DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
               udpSocket.send(packet);
@@ -121,6 +147,18 @@ public class BookClient {
               System.out.println(response);
             }
             else {
+              if(setmode == false) {
+                String setDefault = "setmode U";
+                buf = setDefault.getBytes();
+                DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
+                udpSocket.send(packet);
+                buf = new byte[1024];
+                packet = new DatagramPacket(buf, buf.length);
+                udpSocket.receive(packet);
+                String response = new String(packet.getData(), 0, packet.getLength());
+                System.out.println(response);
+                setmode = true;
+              }
               buf = message.getBytes();
               DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
               udpSocket.send(packet);
@@ -141,6 +179,18 @@ public class BookClient {
               System.out.println(response);
             }
             else {
+              if(setmode == false) {
+                String setDefault = "setmode U";
+                buf = setDefault.getBytes();
+                DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
+                udpSocket.send(packet);
+                buf = new byte[1024];
+                packet = new DatagramPacket(buf, buf.length);
+                udpSocket.receive(packet);
+                String response = new String(packet.getData(), 0, packet.getLength());
+                System.out.println(response);
+                setmode = true;
+              }
               buf = message.getBytes();
               DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
               udpSocket.send(packet);
@@ -158,6 +208,18 @@ public class BookClient {
               out.println(message);
             }
             else {
+              if(setmode == false) {
+                String setDefault = "setmode U";
+                buf = setDefault.getBytes();
+                DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
+                udpSocket.send(packet);
+                buf = new byte[1024];
+                packet = new DatagramPacket(buf, buf.length);
+                udpSocket.receive(packet);
+                String response = new String(packet.getData(), 0, packet.getLength());
+                System.out.println(response);
+                setmode = true;
+              }
               buf = message.getBytes();
               DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
               udpSocket.send(packet);
