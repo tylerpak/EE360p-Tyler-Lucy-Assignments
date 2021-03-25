@@ -54,14 +54,26 @@ public class BookClient {
           String[] tokens = cmd.split(" ");
 
           if (tokens[0].equals("setmode")) {
+            String message = tokens[0] + " " + tokens[1];
             if(tokens[1].equals("U")) {
               tcp = false;
+              buf = message.getBytes();
+              DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
+              udpSocket.send(packet);
+              buf = new byte[1024];
+              packet = new DatagramPacket(buf, buf.length);
+              udpSocket.receive(packet);
+              String response = new String(packet.getData(), 0, packet.getLength());
+              System.out.println(response);
             }
             else if(tokens[1].equals("T")) {
               tcpSocket = new Socket(hostAddress, tcpPort);
               out = new PrintWriter(tcpSocket.getOutputStream(), true);
               in = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
               tcp = true;
+              out.println(message);
+              String response = in.readLine();
+              System.out.println(response);
             }
           }
           else if (tokens[0].equals("borrow")) {
