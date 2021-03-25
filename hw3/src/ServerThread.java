@@ -2,36 +2,38 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ServerThread extends Thread{
     byte buf1[] = new byte[1024];
     byte buf2[] = new byte[1024];
     Socket client;
-    static DatagramSocket udpServer;
+    static DatagramSocket udpServer; //DatagramSocket is thread-safe in Java
     static ServerSocket tcpServer;
     DatagramPacket inBuf;
     DatagramPacket outBuf;
     static Inventory inventory;
     boolean tcpMode;
-    static AtomicInteger requestId = new AtomicInteger();
+    static AtomicInteger requestId;
     static HashMap<Integer, String[]> requestLog;
+    static ReentrantLock requestLogLock = new ReentrantLock();
     
-    public ServerThread(Inventory bookInventory, HashMap<Integer, String[]> reqLog, int requestNum, ServerSocket serverSocket, Socket clientSocket){
+    public ServerThread(Inventory bookInventory, HashMap<Integer, String[]> reqLog, AtomicInteger requestNum, ServerSocket serverSocket, Socket clientSocket){
       client = clientSocket;
       tcpServer = serverSocket;
       tcpMode = true;
       inventory = bookInventory;
-      requestId.set(requestNum);
+      requestId = requestNum;
       requestLog = reqLog;
     }
 
-    public ServerThread(Inventory bookInventory, HashMap<Integer, String[]> reqLog, int requestNum, DatagramSocket serverSocket, DatagramPacket receivePacket){
+    public ServerThread(Inventory bookInventory, HashMap<Integer, String[]> reqLog, AtomicInteger requestNum, DatagramSocket serverSocket, DatagramPacket receivePacket){
       udpServer = serverSocket;
       inBuf = receivePacket;
       outBuf = new DatagramPacket(buf2, 1024, inBuf.getAddress(), inBuf.getPort());
       tcpMode = false;
       inventory = bookInventory;
-      requestId.set(requestNum);
+      requestId = requestNum;
       requestLog = reqLog;
     }
 
@@ -48,20 +50,18 @@ public class ServerThread extends Thread{
         }
 
         while (true){
-          if (!tcpMode){ //blocks for next udp message and reads command
-            udpServer.receive(inBuf);
+          if (!tcpMode){ //reading UDP message
             sc.close();
             sc = new Scanner(new String(inBuf.getData(), inBuf.getOffset(), inBuf.getLength()));
           }
           else {
-            while (!sc.hasNextLine()){ //busy wait until next command is given
+            while (!sc.hasNextLine()){ //busy wait until next command is given (TCP) or ends program if client socket is closed
               sleep(3000);
             }
           }
 
           String message = "";
           String command = sc.nextLine();
-          System.out.println("received:" + command);
           Scanner st = new Scanner(command);          
           String tag = st.next();
 
@@ -80,7 +80,9 @@ public class ServerThread extends Thread{
             } else {
               message = String.format("Your request has been approved, %d %s %s", requestId.get(), borrower, title);
               String[] requestDetails = {title, borrower};
+              requestLogLock.lock();
               requestLog.put(requestId.get(), requestDetails);
+              requestLogLock.unlock();
               requestId.incrementAndGet();
             }
           } else if (tag.equals("return")) {
@@ -92,7 +94,9 @@ public class ServerThread extends Thread{
             }
             else {
               inventory.returnBook(requestDetails[0], requestDetails[1]);
+              requestLogLock.lock();
               requestLog.remove(returnRequest);
+              requestLogLock.unlock();
               message = String.format("%d is returned\n", returnRequest);
             }          
           } else if (tag.equals("list")) {
@@ -122,7 +126,6 @@ public class ServerThread extends Thread{
           }
 
           if (message.length() > 0){
-            System.out.println(message);
             if (tcpMode){
               pout.println(message);
               pout.flush();
@@ -133,10 +136,12 @@ public class ServerThread extends Thread{
             }
           }
           st.close();
+
+          if (!tcpMode){ //blocks for next udp message and reads command
+            udpServer.receive(inBuf);
+          }
         } 
-      } catch (Exception e) {
-      }
-      // System.out.println("exiting thread");
+      } catch (Exception e) {}
     }
 
     /**

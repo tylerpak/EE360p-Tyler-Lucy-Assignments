@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class BookServer{
 
@@ -17,7 +18,7 @@ public class BookServer{
     // server variables (all threads share the same inventory, requestLog, requestId)
     Inventory inventory = new Inventory();
     HashMap<Integer, String[]> requestLog = new HashMap<>();
-    int requestId = 1;
+    AtomicInteger requestId = new AtomicInteger(1);
     ExecutorService threadPool = Executors.newCachedThreadPool();
 
     // parse the inventory file
@@ -44,12 +45,9 @@ public class BookServer{
     } catch (FileNotFoundException e) {}
     
     // handle client connections
-    ServerSocket tcpServer;
-    DatagramSocket udpServer;
-
     try {
-      tcpServer = new ServerSocket(tcpPort);
-      udpServer = new DatagramSocket(udpPort);
+      ServerSocket tcpServer = new ServerSocket(tcpPort);
+      DatagramSocket udpServer = new DatagramSocket(udpPort);
       tcpServer.setSoTimeout(1000);
       udpServer.setSoTimeout(1000);
       Socket tcpClient;

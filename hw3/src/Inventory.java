@@ -37,6 +37,7 @@ public class Inventory {
         if (quantityList.get(bookIndex) == 0)
             return 0;
 
+        quantityList.set(bookIndex, quantityList.get(bookIndex) - 1);
         borrowerList.get(bookIndex).add(borrower);
         return 1;
     }
