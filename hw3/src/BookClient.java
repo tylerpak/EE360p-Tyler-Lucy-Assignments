@@ -65,7 +65,7 @@ public class BookClient {
             }
           }
           else if (tokens[0].equals("borrow")) {
-            String message = tokens[0] + " " + tokens[1] + " " + tokens[2];
+            String message = cmd.trim();
             if(tcp == true) {
               out.println(message);
               String response = in.readLine();
@@ -75,6 +75,7 @@ public class BookClient {
               buf = message.getBytes();
               DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
               udpSocket.send(packet);
+              buf = new byte[1024];
               packet = new DatagramPacket(buf, buf.length);
               udpSocket.receive(packet);
               String response = new String(packet.getData(), 0, packet.getLength());
@@ -92,6 +93,7 @@ public class BookClient {
               buf = message.getBytes();
               DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
               udpSocket.send(packet);
+              buf = new byte[1024];
               packet = new DatagramPacket(buf, buf.length);
               udpSocket.receive(packet);
               String response = new String(packet.getData(), 0, packet.getLength());
@@ -103,15 +105,18 @@ public class BookClient {
             if(tcp == true) {
               out.println(message);
               String response = in.readLine();
+              response = response.replace("___", "\n");
               System.out.println(response);
             }
             else {
               buf = message.getBytes();
               DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
               udpSocket.send(packet);
+              buf = new byte[1024];
               packet = new DatagramPacket(buf, buf.length);
               udpSocket.receive(packet);
               String response = new String(packet.getData(), 0, packet.getLength());
+              response = response.replace("___", "\n");
               System.out.println(response);
             }
           }
@@ -120,15 +125,18 @@ public class BookClient {
             if(tcp == true) {
               out.println(message);
               String response = in.readLine();
+              response = response.replace("___", "\n");
               System.out.println(response);
             }
             else {
               buf = message.getBytes();
               DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
               udpSocket.send(packet);
+              buf = new byte[1024];
               packet = new DatagramPacket(buf, buf.length);
               udpSocket.receive(packet);
               String response = new String(packet.getData(), 0, packet.getLength());
+              response = response.replace("___", "\n");
               System.out.println(response);
             }
           }

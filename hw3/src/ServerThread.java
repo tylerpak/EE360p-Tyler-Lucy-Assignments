@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -62,15 +63,16 @@ public class ServerThread extends Thread{
 
           String message = "";
           String command = sc.nextLine();
+          // System.out.println("received:" + command);
           Scanner st = new Scanner(command);          
           String tag = st.next();
 
           if (tag.equals("setmode")){ //let client side handle setmode
             tcpMode = st.next().equals("T");
-            message = String.format("The communication mode is set to %s\n", tcpMode ? "T" : "U");
+            message = String.format("The communication mode is set to %s", tcpMode ? "T" : "U");
           } else if (tag.equals("borrow")) {
             String borrower = st.next();
-            String title = st.next();
+            String title = st.nextLine().trim();
             int result = inventory.borrowBook(title, borrower);
 
             if (result == -1){
@@ -87,17 +89,17 @@ public class ServerThread extends Thread{
             }
           } else if (tag.equals("return")) {
             int returnRequest = st.nextInt();
-            String[] requestDetails = requestLog.get(returnRequest);
-
-            if (requestDetails == null){
-              message = String.format("%d not found, no such borrow record\n", returnRequest);
+            
+            if (!requestLog.containsKey(returnRequest)){
+              message = String.format("%d not found, no such borrow record", returnRequest);
             }
             else {
+              String[] requestDetails = requestLog.get(returnRequest);
               inventory.returnBook(requestDetails[0], requestDetails[1]);
               requestLogLock.lock();
               requestLog.remove(returnRequest);
               requestLogLock.unlock();
-              message = String.format("%d is returned\n", returnRequest);
+              message = String.format("%d is returned", returnRequest);
             }          
           } else if (tag.equals("list")) {
             String borrower = st.next();
@@ -106,11 +108,11 @@ public class ServerThread extends Thread{
 
             if (borrowerLog.size() > 0){
               for (int i = 0; i < borrowerLog.size(); i++){
-                message += String.format("%s %s\n", borrowerLog.get(i)[0], borrowerLog.get(i)[1]);
+                message += String.format("%s %s___", borrowerLog.get(i)[0], borrowerLog.get(i)[1]);
               }
             }
             else {
-              message = String.format("No record found for %s\n", borrower);
+              message = String.format("No record found for %s", borrower);
             }
           } else if (tag.equals("inventory")) {
             message = inventory.printInventory();
@@ -125,6 +127,8 @@ public class ServerThread extends Thread{
             break;
           }
 
+          message = message.trim();
+          System.out.println("message:" + message);
           if (message.length() > 0){
             if (tcpMode){
               pout.println(message);
@@ -137,7 +141,7 @@ public class ServerThread extends Thread{
           }
           st.close();
 
-          if (!tcpMode){ //blocks for next udp message and reads command
+          if (!tcpMode){
             udpServer.receive(inBuf);
           }
         } 
@@ -155,14 +159,10 @@ public class ServerThread extends Thread{
 
       for (int i = 0; i < borrowedTitles.size(); i++){
         String title = borrowedTitles.get(i);
-        String[] requestEntry = {title, borrower};
-
-        if (requestLog.containsValue(requestEntry)){
-          for (int j = 0; j < requestLog.size(); j++){
-            if (requestLog.get(j)[0].equals(title) && requestLog.get(j)[1].equals(borrower)){
-              String[] borrowerEntry = {"" + j, title};
-              borrowerLog.add(borrowerEntry);
-            }
+        for (int key : requestLog.keySet()){
+          if (requestLog.get(key)[0].equals(title) && requestLog.get(key)[1].equals(borrower)){
+            String[] borrowerEntry = {Integer.toString(key), title};
+            borrowerLog.add(borrowerEntry);
           }
         }
       }

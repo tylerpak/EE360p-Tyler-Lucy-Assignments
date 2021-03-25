@@ -94,7 +94,7 @@ public class Inventory {
         String inventStr = "";
 
         for (int i = 0; i < titleList.size(); i++){
-            inventStr += titleList.get(i) + " " + quantityList.get(i) + "\n";
+            inventStr += titleList.get(i) + " " + quantityList.get(i) + "___";
         }
         
         return inventStr;
