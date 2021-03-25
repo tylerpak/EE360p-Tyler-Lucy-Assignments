@@ -1,12 +1,37 @@
 import java.util.Scanner;
 import java.io.*;
 import java.util.*;
+import java.net.*;
 public class BookClient {
   public static void main (String[] args) {
     String hostAddress;
     int tcpPort;
     int udpPort;
     int clientId;
+    DatagramSocket udpSocket;
+    InetAddress address = null;
+    try {
+      address = InetAddress.getByName("localhost");
+    } catch (UnknownHostException e) {
+      e.printStackTrace();
+    }
+    Socket tcpSocket = new Socket();
+    PrintWriter out = null;
+    BufferedReader in = null;
+    try {
+      out = new PrintWriter(tcpSocket.getOutputStream(), true);
+      in = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
+    } catch (IOException e) {
+
+    }
+    udpSocket = null;
+    try {
+      udpSocket = new DatagramSocket();
+    } catch (SocketException e) {
+      e.printStackTrace();
+    }
+    boolean tcp = false; //True for TCP, False for UDP
+    byte[] buf;
 
     if (args.length != 2) {
       System.out.println("ERROR: Provide 2 arguments: commandFile, clientId");
@@ -29,28 +54,105 @@ public class BookClient {
           String[] tokens = cmd.split(" ");
 
           if (tokens[0].equals("setmode")) {
-            // TODO: set the mode of communication for sending commands to the server 
+            if(tokens[1].equals("U")) {
+              tcp = false;
+            }
+            else if(tokens[1].equals("T")) {
+              tcpSocket = new Socket(hostAddress, tcpPort);
+              out = new PrintWriter(tcpSocket.getOutputStream(), true);
+              in = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
+              tcp = true;
+            }
           }
           else if (tokens[0].equals("borrow")) {
-            // TODO: send appropriate command to the server and display the
-            // appropriate responses form the server
-          } else if (tokens[0].equals("return")) {
-            // TODO: send appropriate command to the server and display the
-            // appropriate responses form the server
-          } else if (tokens[0].equals("inventory")) {
-            // TODO: send appropriate command to the server and display the
-            // appropriate responses form the server
-          } else if (tokens[0].equals("list")) {
-            // TODO: send appropriate command to the server and display the
-            // appropriate responses form the server
-          } else if (tokens[0].equals("exit")) {
-            // TODO: send appropriate command to the server 
-          } else {
+            String message = tokens[0] + " " + tokens[1] + " " + tokens[2];
+            if(tcp == true) {
+              out.println(message);
+              String response = in.readLine();
+              System.out.println(response);
+            }
+            else {
+              buf = message.getBytes();
+              DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
+              udpSocket.send(packet);
+              packet = new DatagramPacket(buf, buf.length);
+              udpSocket.receive(packet);
+              String response = new String(packet.getData(), 0, packet.getLength());
+              System.out.println(response);
+            }
+          }
+          else if (tokens[0].equals("return")) {
+            String message = tokens[0] + " " + tokens[1];
+            if(tcp == true) {
+              out.println(message);
+              String response = in.readLine();
+              System.out.println(response);
+            }
+            else {
+              buf = message.getBytes();
+              DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
+              udpSocket.send(packet);
+              packet = new DatagramPacket(buf, buf.length);
+              udpSocket.receive(packet);
+              String response = new String(packet.getData(), 0, packet.getLength());
+              System.out.println(response);
+            }
+          }
+          else if (tokens[0].equals("inventory")) {
+            String message = tokens[0];
+            if(tcp == true) {
+              out.println(message);
+              String response = in.readLine();
+              System.out.println(response);
+            }
+            else {
+              buf = message.getBytes();
+              DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
+              udpSocket.send(packet);
+              packet = new DatagramPacket(buf, buf.length);
+              udpSocket.receive(packet);
+              String response = new String(packet.getData(), 0, packet.getLength());
+              System.out.println(response);
+            }
+          }
+          else if (tokens[0].equals("list")) {
+            String message = tokens[0] + " " + tokens[1];
+            if(tcp == true) {
+              out.println(message);
+              String response = in.readLine();
+              System.out.println(response);
+            }
+            else {
+              buf = message.getBytes();
+              DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
+              udpSocket.send(packet);
+              packet = new DatagramPacket(buf, buf.length);
+              udpSocket.receive(packet);
+              String response = new String(packet.getData(), 0, packet.getLength());
+              System.out.println(response);
+            }
+          }
+          else if (tokens[0].equals("exit")) {
+            String message = tokens[0];
+            if(tcp == true) {
+              out.println(message);
+            }
+            else {
+              buf = message.getBytes();
+              DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
+              udpSocket.send(packet);
+              packet = new DatagramPacket(buf, buf.length);
+            }
+          }
+          else {
             System.out.println("ERROR: No such command");
           }
         }
-    } catch (FileNotFoundException e) {
+    } catch (FileNotFoundException | SocketException | UnknownHostException e) {
 	e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 }
+
