@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -63,7 +62,6 @@ public class ServerThread extends Thread{
 
           String message = "";
           String command = sc.nextLine();
-          System.out.println("received:" + command);
           Scanner st = new Scanner(command);
           String tag = st.next();
 
@@ -128,7 +126,6 @@ public class ServerThread extends Thread{
           }
 
           message = message.trim();
-          // System.out.println("message:" + message);
           if (message.length() > 0){
             if (tcpMode){
               pout.println(message);
@@ -171,7 +168,7 @@ public class ServerThread extends Thread{
      * @throws IOException inventory.txt is not found and cannot be created
      */
     public synchronized void writeInventory() throws IOException{
-      String exitMessage = inventory.printInventory();
+      String exitMessage = inventory.printInventory().replace("___", "\n").trim();
       PrintWriter fileOut = new PrintWriter(new File("inventory.txt"));
       fileOut.println(exitMessage);
       fileOut.flush();

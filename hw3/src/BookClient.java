@@ -152,7 +152,7 @@ public class BookClient {
             if(tcp == true) {
               out.println(message);
               String response = in.readLine();
-              response = response.replace("___", "\n");
+              response = response.replace("___", "\n").trim();
               System.out.println(response);
               output.add(response);
             }
@@ -177,7 +177,7 @@ public class BookClient {
               packet = new DatagramPacket(buf, buf.length);
               udpSocket.receive(packet);
               String response = new String(packet.getData(), 0, packet.getLength());
-              response = response.replace("___", "\n");
+              response = response.replace("___", "\n").trim();
               System.out.println(response);
               output.add(response);
             }
@@ -187,7 +187,7 @@ public class BookClient {
             if(tcp == true) {
               out.println(message);
               String response = in.readLine();
-              response = response.replace("___", "\n");
+              response = response.replace("___", "\n").trim();
               System.out.println(response);
               output.add(response);
             }
@@ -212,7 +212,7 @@ public class BookClient {
               packet = new DatagramPacket(buf, buf.length);
               udpSocket.receive(packet);
               String response = new String(packet.getData(), 0, packet.getLength());
-              response = response.replace("___", "\n");
+              response = response.replace("___", "\n").trim();
               System.out.println(response);
               output.add(response);
             }
