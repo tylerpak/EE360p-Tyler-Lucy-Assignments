@@ -97,7 +97,7 @@ public class Inventory {
         for (int i = 0; i < titleList.size(); i++){
             inventStr += titleList.get(i) + " " + quantityList.get(i);
             if(i < titleList.size() - 1) {
-                inventStr +="\n";
+                inventStr +="___";
             }
         }
         return inventStr;
