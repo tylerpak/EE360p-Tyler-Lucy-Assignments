@@ -8,6 +8,7 @@ public class BookClient {
     int tcpPort;
     int udpPort;
     int clientId;
+    ArrayList<String> output = new ArrayList<String>();
     DatagramSocket udpSocket;
     InetAddress address = null;
     try {
@@ -67,6 +68,7 @@ public class BookClient {
               udpSocket.receive(packet);
               String response = new String(packet.getData(), 0, packet.getLength());
               System.out.println(response);
+              output.add(response);
             }
             else if(tokens[1].equals("T")) {
               tcpSocket = new Socket(hostAddress, tcpPort);
@@ -76,6 +78,7 @@ public class BookClient {
               out.println(message);
               String response = in.readLine();
               System.out.println(response);
+              output.add(response);
             }
           }
           else if (tokens[0].equals("borrow")) {
@@ -84,6 +87,7 @@ public class BookClient {
               out.println(message);
               String response = in.readLine();
               System.out.println(response);
+              output.add(response);
             }
             else {
               if(setmode == false) {
@@ -96,6 +100,7 @@ public class BookClient {
                 udpSocket.receive(packet);
                 String response = new String(packet.getData(), 0, packet.getLength());
                 System.out.println(response);
+                output.add(response);
                 setmode = true;
               }
               buf = message.getBytes();
@@ -106,6 +111,7 @@ public class BookClient {
               udpSocket.receive(packet);
               String response = new String(packet.getData(), 0, packet.getLength());
               System.out.println(response);
+              output.add(response);
             }
           }
           else if (tokens[0].equals("return")) {
@@ -114,6 +120,7 @@ public class BookClient {
               out.println(message);
               String response = in.readLine();
               System.out.println(response);
+              output.add(response);
             }
             else {
               if(setmode == false) {
@@ -126,6 +133,7 @@ public class BookClient {
                 udpSocket.receive(packet);
                 String response = new String(packet.getData(), 0, packet.getLength());
                 System.out.println(response);
+                output.add(response);
                 setmode = true;
               }
               buf = message.getBytes();
@@ -136,6 +144,7 @@ public class BookClient {
               udpSocket.receive(packet);
               String response = new String(packet.getData(), 0, packet.getLength());
               System.out.println(response);
+              output.add(response);
             }
           }
           else if (tokens[0].equals("inventory")) {
@@ -145,6 +154,7 @@ public class BookClient {
               String response = in.readLine();
               response = response.replace("___", "\n");
               System.out.println(response);
+              output.add(response);
             }
             else {
               if(setmode == false) {
@@ -158,6 +168,7 @@ public class BookClient {
                 String response = new String(packet.getData(), 0, packet.getLength());
                 System.out.println(response);
                 setmode = true;
+                output.add(response);
               }
               buf = message.getBytes();
               DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
@@ -168,6 +179,7 @@ public class BookClient {
               String response = new String(packet.getData(), 0, packet.getLength());
               response = response.replace("___", "\n");
               System.out.println(response);
+              output.add(response);
             }
           }
           else if (tokens[0].equals("list")) {
@@ -177,6 +189,7 @@ public class BookClient {
               String response = in.readLine();
               response = response.replace("___", "\n");
               System.out.println(response);
+              output.add(response);
             }
             else {
               if(setmode == false) {
@@ -190,6 +203,7 @@ public class BookClient {
                 String response = new String(packet.getData(), 0, packet.getLength());
                 System.out.println(response);
                 setmode = true;
+                output.add(response);
               }
               buf = message.getBytes();
               DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
@@ -200,6 +214,7 @@ public class BookClient {
               String response = new String(packet.getData(), 0, packet.getLength());
               response = response.replace("___", "\n");
               System.out.println(response);
+              output.add(response);
             }
           }
           else if (tokens[0].equals("exit")) {
@@ -219,12 +234,14 @@ public class BookClient {
                 String response = new String(packet.getData(), 0, packet.getLength());
                 System.out.println(response);
                 setmode = true;
+                output.add(response);
               }
               buf = message.getBytes();
               DatagramPacket packet = new DatagramPacket(buf, buf.length, address, udpPort);
               udpSocket.send(packet);
               packet = new DatagramPacket(buf, buf.length);
             }
+            createOutputFile(clientId, output);
           }
           else {
             System.out.println("ERROR: No such command");
@@ -235,6 +252,15 @@ public class BookClient {
     } catch (IOException e) {
       e.printStackTrace();
     }
+  }
+
+  public static void createOutputFile(int clientId, ArrayList<String> output) throws IOException {
+    PrintWriter fileOut = new PrintWriter(new File("out_"+ clientId + ".txt"));
+    for(int i = 0; i < output.size(); i++) {
+      fileOut.println(output.get(i));
+    }
+    fileOut.flush();
+    fileOut.close();
   }
 }
 
