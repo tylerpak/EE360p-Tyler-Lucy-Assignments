@@ -48,30 +48,20 @@ public class BookServer{
     try {
       ServerSocket tcpServer = new ServerSocket(tcpPort);
       DatagramSocket udpServer = new DatagramSocket(udpPort);
-      tcpServer.setSoTimeout(1000);
-      udpServer.setSoTimeout(1000);
       Socket tcpClient;
-      DatagramPacket receiveConnection;
-      boolean checkTCP = true;
+      DatagramPacket receiveConnection = new DatagramPacket(new byte[1024], 1024);
+
+      // handling UDP requests (sets up single thread for this)
+      Thread udpThread = new ServerThread(inventory, requestLog, requestId, udpServer, receiveConnection); //for UDP connections
+      udpThread.start();
+      threadPool.submit(udpThread);
+
       while (true){
-        try {
-          while (true){
-            if (checkTCP && (tcpClient = tcpServer.accept()) != null){ // handling TCP requests
-              Thread t = new ServerThread(inventory, requestLog, requestId, tcpServer, tcpClient); //for TCP connections
-              t.start();
-              threadPool.submit(t);
-            }
-            else { // handling UDP requests
-              receiveConnection = new DatagramPacket(new byte[1024], 1024);
-              udpServer.receive(receiveConnection);
-              Thread t = new ServerThread(inventory, requestLog, requestId, udpServer, receiveConnection); //for UDP connections
-              t.start();
-              threadPool.submit(t);
-            }
-          }   
-        } catch (SocketTimeoutException e) { //this prevents blocking on accept() or receive (will timeout after 1 sec) 
-          checkTCP = !checkTCP;
-        } 
+        if ((tcpClient = tcpServer.accept()) != null){
+          Thread t = new ServerThread(inventory, requestLog, requestId, tcpServer, tcpClient); //for TCP connections
+          t.start();
+          threadPool.submit(t);
+        }
       }
     } catch (Exception e) {
       threadPool.shutdown();
