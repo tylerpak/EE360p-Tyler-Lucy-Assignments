@@ -106,7 +106,7 @@ public class ServerThread extends Thread{
 
             if (borrowerLog.size() > 0){
               for (int i = 0; i < borrowerLog.size(); i++){
-                message += String.format("%s %s", borrowerLog.get(i)[0], borrowerLog.get(i)[1]);
+                message += String.format("%s %s___", borrowerLog.get(i)[0], borrowerLog.get(i)[1]);
               }
             }
             else {
@@ -116,13 +116,13 @@ public class ServerThread extends Thread{
             message = inventory.printInventory();
           } else if (tag.equals("exit")){
             writeInventory();
-            st.close();
             if (tcpMode) {
+              st.close();
+              sc.close();
               pout.close();
               client.close();
+              break;
             }
-            sc.close();
-            break;
           }
 
           message = message.trim();

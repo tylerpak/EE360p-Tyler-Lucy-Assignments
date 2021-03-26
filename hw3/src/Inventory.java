@@ -79,8 +79,9 @@ public class Inventory {
     public synchronized List<String> borrowerList(String borrower){
         List<String> list = new LinkedList<>();
         for (int i = 0; i < titleList.size(); i++){
-            if (borrowerList.get(i).contains(borrower)){
-                list.add(titleList.get(i));
+            for (String name : borrowerList.get(i)){
+                if (name.equals(borrower))
+                    list.add(titleList.get(i));
             }
         }
         return list;
