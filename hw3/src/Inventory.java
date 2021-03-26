@@ -25,7 +25,7 @@ public class Inventory {
     /**
      * Borrows a book from the inventory
      * @param title title of the book to be borrowed
-     * @param borrowerName borrower's name
+     * @param borrower borrower's name
      * @return -1 if book not found, 0 if no copies left to borrow, 1 if successful borrow
      */
     public synchronized int borrowBook(String title, String borrower){
@@ -58,7 +58,7 @@ public class Inventory {
     /**
      * Return the borrowed book in inventory
      * @param title title of book to be returned
-     * @param borrowerName borrower who is returning the book
+     * @param borrower borrower who is returning the book
      * @return 1 if successfully returned, -1 if book does not exist in inventory
      */
     public synchronized int returnBook(String title, String borrower){
@@ -95,9 +95,11 @@ public class Inventory {
         String inventStr = "";
 
         for (int i = 0; i < titleList.size(); i++){
-            inventStr += titleList.get(i) + " " + quantityList.get(i) + "___";
+            inventStr += titleList.get(i) + " " + quantityList.get(i);
+            if(i < titleList.size() - 1) {
+                inventStr +="\n";
+            }
         }
-        
         return inventStr;
     }
 }

@@ -67,7 +67,7 @@ public class ServerThread extends Thread{
 
           if (tag.equals("setmode")){ //let client side handle setmode
             tcpMode = st.next().equals("T");
-            message = String.format("The communication mode is set to %s", tcpMode ? "T" : "U");
+            message = String.format("The communication mode is set to %s", tcpMode ? "TCP" : "UDP");
           } else if (tag.equals("borrow")) {
             String borrower = st.next();
             String title = st.nextLine().trim();
@@ -170,7 +170,7 @@ public class ServerThread extends Thread{
     public synchronized void writeInventory() throws IOException{
       String exitMessage = inventory.printInventory().replace("___", "\n").trim();
       PrintWriter fileOut = new PrintWriter(new File("inventory.txt"));
-      fileOut.println(exitMessage);
+      fileOut.print(exitMessage);
       fileOut.flush();
       fileOut.close();
     }
