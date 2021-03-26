@@ -52,12 +52,8 @@ public class ServerThread extends Thread{
           if (!tcpMode){ //reading UDP message
             sc.close();
             udpServer.receive(inBuf);
+            outBuf = new DatagramPacket(new byte[1024], 1024, inBuf.getAddress(), inBuf.getPort());
             sc = new Scanner(new String(inBuf.getData(), inBuf.getOffset(), inBuf.getLength()));
-          }
-          else {
-            while (!sc.hasNextLine()){ //busy wait until next command is given (TCP) or ends program if client socket is closed
-              sleep(3000);
-            }
           }
 
           String message = "";
@@ -133,7 +129,7 @@ public class ServerThread extends Thread{
             }
             else {
               byte packet[] = message.getBytes();
-              outBuf = new DatagramPacket(packet, packet.length, inBuf.getAddress(), inBuf.getPort());
+              outBuf.setData(packet, 0, packet.length);
               udpServer.send(outBuf);
             }
           }
