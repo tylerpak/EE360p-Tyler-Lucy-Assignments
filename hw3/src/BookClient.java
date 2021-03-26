@@ -241,13 +241,13 @@ public class BookClient {
               udpSocket.send(packet);
               packet = new DatagramPacket(buf, buf.length);
             }
-            fileOut.flush();
-            fileOut.close();
           }
           else {
             System.out.println("ERROR: No such command");
           }
         }
+      fileOut.flush();
+      fileOut.close();
     } catch (FileNotFoundException | SocketException | UnknownHostException e) {
 	e.printStackTrace();
     } catch (IOException e) {
