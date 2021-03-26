@@ -67,7 +67,7 @@ public class ServerThread extends Thread{
 
           if (tag.equals("setmode")){ //let client side handle setmode
             tcpMode = st.next().equals("T");
-            message = String.format("The communication mode is set to %s", tcpMode ? "T" : "U");
+            message = String.format("The communication mode is set to %s", tcpMode ? "TCP" : "UDP");
           } else if (tag.equals("borrow")) {
             String borrower = st.next();
             String title = st.nextLine().trim();
@@ -150,13 +150,15 @@ public class ServerThread extends Thread{
      */
     public List<String []> reverseMapRequestLog(List<String> borrowedTitles, String borrower){
       List<String []> borrowerLog = new LinkedList<>();
+      Set<Integer> addedRequests = new HashSet<>();
 
       for (int i = 0; i < borrowedTitles.size(); i++){
         String title = borrowedTitles.get(i);
         for (int key : requestLog.keySet()){
-          if (requestLog.get(key)[0].equals(title) && requestLog.get(key)[1].equals(borrower)){
+          if (requestLog.get(key)[0].equals(title) && requestLog.get(key)[1].equals(borrower) && !addedRequests.contains(key)){
             String[] borrowerEntry = {Integer.toString(key), title};
             borrowerLog.add(borrowerEntry);
+            addedRequests.add(key);
           }
         }
       }
@@ -170,7 +172,7 @@ public class ServerThread extends Thread{
     public synchronized void writeInventory() throws IOException{
       String exitMessage = inventory.printInventory().replace("___", "\n").trim();
       PrintWriter fileOut = new PrintWriter(new File("inventory.txt"));
-      fileOut.println(exitMessage);
+      fileOut.print(exitMessage);
       fileOut.flush();
       fileOut.close();
     }
