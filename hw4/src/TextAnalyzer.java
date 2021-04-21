@@ -12,6 +12,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -28,19 +29,23 @@ public class TextAnalyzer extends Configured implements Tool {
             throws IOException, InterruptedException
         {
             // Implementation of you mapper function
-            ArrayList<String> tok = new ArrayList<>();
-            String str = value.toString();
+            //ArrayList<String> tok = new ArrayList<>();
+            HashSet<String> tok = new HashSet<>();
+	        String str = value.toString();
             str = str.toLowerCase();
             str = str.replaceAll("[^A-Za-z0-9]", " ");
             StringTokenizer itr = new StringTokenizer(str);
             while(itr.hasMoreTokens()) {
-                tok.add(itr.nextToken());
+		        String strToken = itr.nextToken();
+		        if (!tok.contains(strToken)){
+                    tok.add(strToken);
+                }
             }
-            for(int i = 0; i < tok.size(); i++) {
-                for(int j = 0; j < tok.size(); j++) {
-                    if(i != j) {
-                        Tuple t = new Tuple(new Text(tok.get(j)), new IntWritable(1));
-                        context.write(new Text(tok.get(i)), t);
+            for(String str1 : tok) {
+                for(String str2 : tok) {
+                    if(str1 != str2) {
+                        Tuple t = new Tuple(new Text(str2), new IntWritable(1));
+                        context.write(new Text(str1), t);
                     }
                 }
             }
@@ -88,7 +93,7 @@ public class TextAnalyzer extends Configured implements Tool {
                     map.put(tupleKey, map.get(tupleKey) + count);
                 }
                 else {
-                    map.put(tupleKey, 1);
+                    map.put(tupleKey, count);
                 }
             }
 
