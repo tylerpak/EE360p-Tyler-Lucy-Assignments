@@ -87,7 +87,7 @@ public class TextAnalyzer extends Configured implements Tool {
                     map.put(tupleKey, map.get(tupleKey) + count);
                 }
                 else {
-                    map.put(tupleKey, 0);
+                    map.put(tupleKey, 1);
                 }
             }
 
