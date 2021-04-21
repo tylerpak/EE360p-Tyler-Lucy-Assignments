@@ -10,7 +10,11 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.StringTokenizer;
+
 
 // Do not change the signature of this class
 public class TextAnalyzer extends Configured implements Tool {
@@ -23,6 +27,22 @@ public class TextAnalyzer extends Configured implements Tool {
             throws IOException, InterruptedException
         {
             // Implementation of you mapper function
+            ArrayList<String> tok = new ArrayList<>();
+            String str = value.toString();
+            str = str.toLowerCase();
+            str = str.replaceAll("[^A-Za-z0-9]", " ");
+            StringTokenizer itr = new StringTokenizer(str);
+            while(itr.hasMoreTokens()) {
+                tok.add(itr.nextToken());
+            }
+            for(int i = 0; i < tok.size(); i++) {
+                for(int j = 0; j < tok.size(); j++) {
+                    if(i != j) {
+                        Tuple t = new Tuple(new Text(tok.get(j)), new IntWritable(1));
+                        context.write(new Text(tok.get(i)), t);
+                    }
+                }
+            }
         }
     }
 
@@ -33,6 +53,19 @@ public class TextAnalyzer extends Configured implements Tool {
             throws IOException, InterruptedException
         {
             // Implementation of you combiner function
+            Map<String,Integer> tup = new HashMap<>();
+            for(Tuple t: tuples) {
+                String str = t.getQueryword().toString();
+                if(tup.containsKey(str)) {
+                    tup.put(str, 1 + tup.get(str));
+                } else {
+                    tup.put(str, 1);
+                }
+            }
+            for(Map.Entry<String, Integer> entry: tup.entrySet()) {
+                Tuple t = new Tuple(new Text(entry.getKey()), new IntWritable(entry.getValue()));
+                context.write(key,t);
+            }
         }
     }
 
