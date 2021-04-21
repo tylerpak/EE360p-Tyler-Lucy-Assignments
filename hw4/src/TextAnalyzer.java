@@ -115,7 +115,7 @@ public class TextAnalyzer extends Configured implements Tool {
         Configuration conf = this.getConf();
 
         // Create job
-        Job job = new Job(conf, "EID1_lwz83"); // Replace with your EIDs
+        Job job = new Job(conf, "tjp2365_lwz83"); // Replace with your EIDs
         job.setJarByClass(TextAnalyzer.class);
 
         // Setup MapReduce job
