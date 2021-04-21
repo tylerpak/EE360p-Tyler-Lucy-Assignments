@@ -10,6 +10,7 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +56,7 @@ public class TextAnalyzer extends Configured implements Tool {
             // Implementation of you combiner function
             Map<String,Integer> tup = new HashMap<>();
             for(Tuple t: tuples) {
-                String str = t.getQueryword().toString();
+                String str = t.getValue().toString();
                 if(tup.containsKey(str)) {
                     tup.put(str, 1 + tup.get(str));
                 } else {
