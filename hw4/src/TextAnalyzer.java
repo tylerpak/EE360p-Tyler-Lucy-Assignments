@@ -10,33 +10,68 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.StringTokenizer;
+
+
 // Do not change the signature of this class
 public class TextAnalyzer extends Configured implements Tool {
 
     // Replace "?" with your own output key / value types
     // The four template data types are:
     //     <Input Key Type, Input Value Type, Output Key Type, Output Value Type>
-    public static class TextMapper extends Mapper<LongWritable, Text, ?, ?> {
+    public static class TextMapper extends Mapper<LongWritable, Text, Text, Tuple> {
         public void map(LongWritable key, Text value, Context context)
             throws IOException, InterruptedException
         {
             // Implementation of you mapper function
+            ArrayList<String> tok = new ArrayList<>();
+            String str = value.toString();
+            str = str.toLowerCase();
+            str = str.replaceAll("[^A-Za-z0-9]", " ");
+            StringTokenizer itr = new StringTokenizer(str);
+            while(itr.hasMoreTokens()) {
+                tok.add(itr.nextToken());
+            }
+            for(int i = 0; i < tok.size(); i++) {
+                for(int j = 0; j < tok.size(); j++) {
+                    if(i != j) {
+                        Tuple t = new Tuple(new Text(tok.get(j)), new IntWritable(1));
+                        context.write(new Text(tok.get(i)), t);
+                    }
+                }
+            }
         }
     }
 
     // Replace "?" with your own key / value types
     // NOTE: combiner's output key / value types have to be the same as those of mapper
-    public static class TextCombiner extends Reducer<?, ?, ?, ?> {
+    public static class TextCombiner extends Reducer<Text, Tuple, Text, Tuple> {
         public void reduce(Text key, Iterable<Tuple> tuples, Context context)
             throws IOException, InterruptedException
         {
             // Implementation of you combiner function
+            Map<String,Integer> tup = new HashMap<>();
+            for(Tuple t: tuples) {
+                String str = t.getQueryword().toString();
+                if(tup.containsKey(str)) {
+                    tup.put(str, 1 + tup.get(str));
+                } else {
+                    tup.put(str, 1);
+                }
+            }
+            for(Map.Entry<String, Integer> entry: tup.entrySet()) {
+                Tuple t = new Tuple(new Text(entry.getKey()), new IntWritable(entry.getValue()));
+                context.write(key,t);
+            }
         }
     }
 
     // Replace "?" with your own input key / value types, i.e., the output
     // key / value types of your mapper function
-    public static class TextReducer extends Reducer<?, ?, Text, Text> {
+    public static class TextReducer extends Reducer<Text, Tuple, Text, Text> {
         private final static Text emptyText = new Text("");
 
         public void reduce(Text key, Iterable<Tuple> queryTuples, Context context)
